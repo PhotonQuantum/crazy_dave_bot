@@ -77,11 +77,11 @@ async def blame(event: events.NewMessage.Event):
         reply_user: User = reply_message.sender
         if reply_user == me and (rsp := responses.get(reply_message.id, None)):
             # noinspection PyUnboundLocalVariable
-            await event.reply(json.dumps(rsp, ensure_ascii=False))
+            await event.reply(json.dumps(rsp.dumps(), ensure_ascii=False))
         else:
             await event.reply("Log rotated.")
     elif responses:
-        await event.reply(json.dumps(list(responses.values())[-1], ensure_ascii=False))
+        await event.reply(json.dumps(list(responses.values())[-1].dumps(), ensure_ascii=False))
     raise events.StopPropagation
 
 
@@ -102,16 +102,16 @@ async def new_message(event: events.NewMessage.Event):
         if reply_user == me:
             async with bot.action(group, SendMessageTypingAction()):
                 sentence = [reply_message.text, message.text] if random.random() < 0.5 else message.text
-                rsp, raw = await predictor.predict(sentence)
-                req_id = await event.reply(rsp)
-                responses[req_id.id] = raw
+                rsp = await predictor.predict(sentence)
+                req_id = await event.reply(rsp.text)
+                responses[req_id.id] = rsp
     elif random.random() < chance or message.text.startswith(f"@{me.username}"):
         async with bot.action(group, SendMessageTypingAction()):
             sentence = [msg.text for msg in
                         logger.last_messages(5)] if random.random() < 0.5 else logger.last_message.text
-            rsp, raw = await predictor.predict(sentence)
-            req_id = await bot.send_message(group, rsp)
-            responses[req_id.id] = raw
+            rsp = await predictor.predict(sentence)
+            req_id = await bot.send_message(group, rsp.text)
+            responses[req_id.id] = rsp
 
 
 @scheduler.scheduled_job("interval", minutes=10)
