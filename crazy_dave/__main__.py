@@ -1,6 +1,9 @@
 import json
+import logging
 import os
 import random
+import secrets
+import traceback
 from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -13,10 +16,11 @@ from .oss import Uploader
 from .predictor import Predictor
 from .utils import MaxSizeDict
 
+logging.warning("Starting bot")
+
 api_id = int(os.environ["API_ID"])
 api_hash = os.environ["API_HASH"]
 bot_token = os.environ["BOT_TOKEN"]
-group_id = os.environ["GROUP_ID"]
 lstm_url = os.environ["LSTM_URL"]
 s2s_url = os.environ["S2S_URL"]
 oss_endpoint = os.environ["OSS_ENDPOINT"]
@@ -44,6 +48,26 @@ responses = MaxSizeDict(128)
 me: Optional[User] = None
 group: Optional[InputPeerChat] = None
 chance: float = 0.1
+binding_key = secrets.token_hex(nbytes=16)
+
+
+@bot.on(events.NewMessage(pattern="/bind_group"))
+async def bind_group(event: events.NewMessage.Event):
+    global binding_key
+    token = event.message.text.split(" ")[-1]
+    if token == binding_key:
+        try:
+            global group
+            group = await bot.get_input_entity(event.chat_id)
+            if not os.path.exists("/data"):
+                os.mkdir("/data")
+            with open("/data/chat_group", mode="w") as f:
+                f.write(str(event.chat_id))
+            await event.reply("Bound to group.")
+        except:
+            traceback.print_exc()
+        binding_key = secrets.token_hex(nbytes=16)
+        logging.warning(f"Binding key changed to: {binding_key}")
 
 
 @bot.on(events.NewMessage(pattern="/blame"))
@@ -64,6 +88,8 @@ async def blame(event: events.NewMessage.Event):
 # noinspection PyTypeChecker
 @bot.on(events.NewMessage)
 async def new_message(event: events.NewMessage.Event):
+    if not group:
+        return
     message: _Message = event.message
     if not (isinstance(message.to_id, PeerChat) and message.to_id.chat_id == group.chat_id):
         return
@@ -82,7 +108,7 @@ async def new_message(event: events.NewMessage.Event):
     elif random.random() < chance or message.text.startswith(f"@{me.username}"):
         async with bot.action(group, SendMessageTypingAction()):
             sentence = [msg.text for msg in
-                    logger.last_messages(5)] if random.random() < 0.5 else logger.last_message.text
+                        logger.last_messages(5)] if random.random() < 0.5 else logger.last_message.text
             rsp, raw = await predictor.predict(sentence)
             req_id = await bot.send_message(group, rsp)
             responses[req_id.id] = raw
@@ -90,6 +116,8 @@ async def new_message(event: events.NewMessage.Event):
 
 @scheduler.scheduled_job("interval", minutes=10)
 async def model_update():
+    if not group:
+        return
     lstm_result, s2s_result = await predictor.update_model()
     if lstm_result.updated:
         await bot.send_message(group,
@@ -104,9 +132,16 @@ async def history_upload():
 
 
 async def startup():
-    global me, group
+    global me
     me = await bot.get_me()
-    group = await bot.get_input_entity(group_id)
+    if os.path.exists("/data/chat_group"):
+        with open("/data/chat_group") as f:
+            try:
+                group_id = int(f.read())
+            except ValueError:
+                return
+            global group
+            group = await bot.get_input_entity(group_id)
 
 
 async def shutdown():
@@ -115,10 +150,11 @@ async def shutdown():
 
 bot.start(bot_token=bot_token)
 scheduler.start()
-print("Bot started.")
+logging.warning("Bot started.")
+logging.warning(f"Group binding key is: {binding_key}")
 bot.loop.run_until_complete(startup())
 try:
     bot.run_until_disconnected()
 finally:
-    print("Bot shutdown.")
+    logging.warning("Bot shutdown.")
     bot.loop.run_until_complete(shutdown())

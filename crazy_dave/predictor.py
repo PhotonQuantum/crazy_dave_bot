@@ -10,16 +10,16 @@ from aiohttp import ClientSession
 class LSTMParams:
     sentence: str
     temp: int = 1
-    b: int = 20
-    b_topk: int = 5
-    mode: str = "beam"
+    n: int = 1
 
 
 @dataclass
 class S2SParams:
     sentence: str
     temp: int = 1
-    n: int = 1
+    b: int = 20
+    b_topk: int = 5
+    mode: str = "beam"
 
 
 @dataclass(frozen=True)
@@ -48,7 +48,6 @@ class Predictor:
             async with self._session.get(urljoin(self._s2s_url, "infer"), params=asdict(S2SParams(sentences))) as r:
                 raw = await r.json()
 
-        raw = await r.json()
         response = raw["response"]
         if legacy:
             return " ".join(response.strip(";").split(";")), raw
