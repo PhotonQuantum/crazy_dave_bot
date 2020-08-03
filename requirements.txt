@@ -1,0 +1,4 @@
+telethon
+apscheduler
+aiohttp
+asyncoss
