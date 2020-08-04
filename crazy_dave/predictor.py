@@ -59,7 +59,7 @@ class Predictor:
         legacy = force_legacy or isinstance(sentences, list)
 
         if legacy:
-            input_sentences = ";".join(x.strip() for x in sentences)
+            input_sentences = ";".join(x.strip() for x in sentences) + ";"
             payload = asdict(LSTMParams(input_sentences))
             async with self._session.get(urljoin(self._lstm_url, "infer"),
                                          params=payload) as r:
