@@ -145,6 +145,7 @@ async def startup():
 
 
 async def shutdown():
+    await history_upload()
     await predictor.close()
 
 
