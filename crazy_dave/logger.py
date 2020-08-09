@@ -1,5 +1,4 @@
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from typing import List
 
 from telethon.tl.custom import Message as _Message
@@ -12,7 +11,7 @@ from .utils import is_arabic
 class Message:
     name: str
     id: int
-    datetime: datetime
+    time: int
     text: str
     extra: dict
 
@@ -31,7 +30,7 @@ class MessageLogger:
         message_obj = Message(
             name=f"{first_name} {last_name}".strip(),
             id=sender.id,
-            datetime=message.date,
+            time=int(message.date.timestamp()),
             text=msg,
             extra={"arabic": is_arabic(msg), "source": "telegram"}
         )

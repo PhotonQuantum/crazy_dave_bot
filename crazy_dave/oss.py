@@ -1,4 +1,4 @@
-import pickle
+import json
 import time
 from asyncio import Lock
 
@@ -16,4 +16,4 @@ class Uploader:
     async def upload(self, chat_history: dict):
         async with self._lock:
             async with Bucket(self._auth, self._endpoint, self._bucket) as bucket:
-                await bucket.put_object(f"dataset/tg_{self._ts}.pickle", pickle.dumps(chat_history))
+                await bucket.put_object(f"dataset_v2/{self._ts}.json", json.dumps(chat_history))
