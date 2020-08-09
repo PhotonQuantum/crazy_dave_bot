@@ -88,7 +88,7 @@ async def blame(event: events.NewMessage.Event):
 # noinspection PyTypeChecker
 @bot.on(events.NewMessage)
 async def new_message(event: events.NewMessage.Event):
-    if not group:
+    if not group or not me:
         return
     message: _Message = event.message
     if not (isinstance(message.to_id, PeerChat) and message.to_id.chat_id == group.chat_id):

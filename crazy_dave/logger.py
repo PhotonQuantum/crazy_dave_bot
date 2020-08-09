@@ -26,8 +26,10 @@ class MessageLogger:
         if not (msg := message.message.strip()):
             return
 
+        first_name = name if (name := sender.first_name) else ""
+        last_name = name if (name := sender.last_name) else ""
         message_obj = Message(
-            name=f"{sender.first_name} {sender.last_name}",
+            name=f"{first_name} {last_name}".strip(),
             id=sender.id,
             datetime=message.date,
             text=msg,
@@ -42,6 +44,7 @@ class MessageLogger:
     def last_messages(self, n: int = 1) -> List[Message]:
         if self.history:
             return self.history[-n:]
+        return []
 
     def dumps(self):
         return [asdict(message) for message in self.history]
