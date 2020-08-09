@@ -33,7 +33,7 @@ class MessageLogger:
             id=sender.id,
             datetime=message.date,
             text=msg,
-            extra={"arabic": is_arabic(msg)}
+            extra={"arabic": is_arabic(msg), "source": "telegram"}
         )
         self.history.append(message_obj)
 
