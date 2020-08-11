@@ -28,11 +28,11 @@ class MessageLogger:
         first_name = name if (name := sender.first_name) else ""
         last_name = name if (name := sender.last_name) else ""
         message_obj = Message(
-            name=f"{first_name} {last_name}".strip(),
+            name=sender.username,
             id=sender.id,
             time=int(message.date.timestamp()),
             text=msg,
-            extra={"arabic": is_arabic(msg), "source": "telegram"}
+            extra={"arabic": is_arabic(msg), "source": "telegram", "display_name": f"{first_name} {last_name}".strip()}
         )
         self.history.append(message_obj)
 
