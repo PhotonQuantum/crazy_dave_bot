@@ -9,7 +9,7 @@ from typing import Optional
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telethon import TelegramClient, connection, events
 from telethon.tl.custom import Message as _Message
-from telethon.tl.types import InputPeerChat, PeerChat, SendMessageTypingAction, User
+from telethon.tl.types import InputPeerChat, SendMessageTypingAction, User
 
 from .logger import MessageLogger
 from .oss import Uploader
@@ -91,7 +91,8 @@ async def new_message(event: events.NewMessage.Event):
     if not group or not me:
         return
     message: _Message = event.message
-    if not (isinstance(message.to_id, PeerChat) and message.to_id.chat_id == group.chat_id):
+    source = await message.get_input_chat()
+    if not source == group:
         return
     logger.log(message)
 
