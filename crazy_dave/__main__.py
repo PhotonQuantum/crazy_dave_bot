@@ -122,9 +122,9 @@ async def model_update():
     lstm_result, s2s_result = await predictor.update_model()
     if lstm_result.updated:
         await bot.send_message(group,
-                               f"Legacy model updated.\n{lstm_result.old_version} -> {lstm_result.current_version}")
+                               f"Legacy model updated.\n{lstm_result.from_version} -> {lstm_result.current_version}")
     if s2s_result.updated:
-        await bot.send_message(group, f"S2S model updated.\n{s2s_result.old_version} -> {s2s_result.current_version}")
+        await bot.send_message(group, f"S2S model updated.\n{s2s_result.from_version} -> {s2s_result.current_version}")
 
 
 @scheduler.scheduled_job("interval", minutes=10)

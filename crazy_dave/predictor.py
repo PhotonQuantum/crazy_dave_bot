@@ -32,7 +32,7 @@ class S2SParams:
 class UpdateResult:
     updated: bool
     current_version: str
-    old_version: Optional[str] = None
+    from_version: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -57,32 +57,32 @@ class Predictor:
 
     async def predict(self, sentences: Union[str, List[str]], force_legacy: bool = False) -> PredictResult:
         legacy = force_legacy or isinstance(sentences, list)
+        url = self._lstm_url if legacy else self._s2s_url
 
-        if legacy:
-            input_sentences = ";".join(x.strip() for x in sentences) + ";"
-            payload = asdict(LSTMParams(input_sentences))
-            async with self._session.get(urljoin(self._lstm_url, "infer"),
-                                         params=payload) as r:
-                raw = await r.json()
+        if isinstance(sentences, list):
+            _sentences = sentences
+        elif isinstance(sentences, str):
+            _sentences = [sentences]
         else:
-            payload = asdict(S2SParams(sentences))
-            async with self._session.get(urljoin(self._s2s_url, "infer"), params=payload) as r:
-                raw = await r.json()
+            raise KeyError
+        payload = {"sentences": _sentences}
+
+        async with self._session.post(urljoin(url, "infer"), json=payload) as r:
+            raw = await r.json()
 
         response = raw["response"]
-        split_char = ";" if legacy else "EOS"
-        text = " ".join(response.strip(split_char).split(split_char))
+        text = " ".join(response)
         return PredictResult(text, raw, payload, PredictMode.Legacy if legacy else PredictMode.S2S)
 
     async def update_model(self) -> Tuple[UpdateResult, UpdateResult]:
         async def fetch(url):
-            async with self._session.get(url) as r:
+            async with self._session.post(url) as r:
                 return await r.json()
 
         def parse_result(result):
             if result["updated"]:
-                return UpdateResult(True, result["version"], result["old"])
-            return UpdateResult(False, result["version"])
+                return UpdateResult(True, result["current_version"], result["from_version"])
+            return UpdateResult(False, result["current_version"])
 
         async with self._update_lock:
             update_lstm = fetch(urljoin(self._lstm_url, "update"))
