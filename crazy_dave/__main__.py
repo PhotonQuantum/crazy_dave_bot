@@ -25,6 +25,7 @@ lstm_url = os.environ["LSTM_URL"]
 s2s_url = os.environ["S2S_URL"]
 oss_endpoint = os.environ["OSS_ENDPOINT"]
 oss_bucket = os.environ["OSS_BUCKET"]
+oss_prefix = os.environ["OSS_PREFIX"]
 aliyun_accesskey_id = os.environ["ALIYUN_ACCESSKEY_ID"]
 aliyun_accesskey_secret = os.environ["ALIYUN_ACCESSKEY_SECRET"]
 mtproto_server = os.environ.get("MTPROTO_SERVER", None)
@@ -41,7 +42,7 @@ else:
 
 scheduler = AsyncIOScheduler()
 predictor = Predictor(s2s_url, lstm_url)
-uploader = Uploader((aliyun_accesskey_id, aliyun_accesskey_secret), oss_endpoint, oss_bucket)
+uploader = Uploader((aliyun_accesskey_id, aliyun_accesskey_secret), oss_endpoint, oss_bucket, oss_prefix)
 logger = MessageLogger()
 responses = MaxSizeDict(128)
 
