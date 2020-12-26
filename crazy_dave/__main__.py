@@ -86,6 +86,28 @@ async def blame(event: events.NewMessage.Event):
     raise events.StopPropagation
 
 
+@bot.on(events.NewMessage(pattern="/set_prob"))
+async def set_prob(event: events.NewMessage.Event):
+    if not group:
+        return
+
+    global chance
+
+    raw_prob: str = event.message.text.split(" ")[-1]
+
+    try:
+        prob = float(raw_prob)
+    except ValueError:
+        return
+
+    if prob < 0 or prob > 1:
+        return
+
+    chance = prob
+    logging.warning(f"Setting reply probability to {chance}")
+    await event.reply(f"Setting reply probability to {chance}")
+
+
 # noinspection PyTypeChecker
 @bot.on(events.NewMessage)
 async def new_message(event: events.NewMessage.Event):
